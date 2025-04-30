@@ -1,60 +1,77 @@
 import React, { useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function RegisterPage() {
-  const [userType, setUserType] = useState('patient'); // default: patient
+  const [userType, setUserType] = useState('patient');
+  const navigate = useNavigate();
 
-  const handleUserChange = (type) => {
-    setUserType(type);
-  };
+  const handleUserChange = (type) => setUserType(type);
 
   return (
     <div className="container mt-5">
       <h2>Register</h2>
-
-      {/* Toggle Buttons */}
       <div className="btn-group mb-3">
-        <button className={`btn ${userType === 'patient' ? 'btn-primary' : 'btn-outline-primary'}`} 
-                onClick={() => handleUserChange('patient')}>
+        <button className={`btn ${userType === 'patient' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => handleUserChange('patient')}>
           Patient
         </button>
-        <button className={`btn ${userType === 'doctor' ? 'btn-primary' : 'btn-outline-primary'}`} 
-                onClick={() => handleUserChange('doctor')}>
+        <button className={`btn ${userType === 'doctor' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => handleUserChange('doctor')}>
           Doctor
         </button>
       </div>
-
-      {/* Forms */}
-      {userType === 'patient' ? <PatientForm /> : <DoctorForm />}
+      {userType === 'patient' ? <PatientForm navigate={navigate} /> : <DoctorForm navigate={navigate} />}
     </div>
   );
 }
 
-function PatientForm() {
+function PatientForm({ navigate }) {
+  const [formData, setFormData] = useState({
+    name: '', email: '', password: '', age: '', gender: 'Male'
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        ...formData,
+        role: 'patient'
+      });
+
+      const { token, user } = res.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      navigate("/dashboard");
+
+    } catch (err) {
+      alert("Registration failed: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
-    <form>
+    <form onSubmit={handleRegister}>
       <div className="form-group">
         <label>Name:</label>
-        <input type="text" className="form-control" placeholder="Enter name" />
+        <input name="name" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Email:</label>
-        <input type="email" className="form-control" placeholder="Enter email" />
+        <input type="email" name="email" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Password:</label>
-        <input type="password" className="form-control" placeholder="Password" />
+        <input type="password" name="password" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Age:</label>
-        <input type="number" className="form-control" placeholder="Enter age" />
+        <input type="number" name="age" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Gender:</label>
-        <select className="form-control">
-          <option>Male</option>
-          <option>Female</option>
-          <option>Other</option>
+        <select name="gender" className="form-control" onChange={handleChange}>
+          <option>Male</option><option>Female</option><option>Other</option>
         </select>
       </div>
       <button type="submit" className="btn btn-primary mt-3">Register as Patient</button>
@@ -62,34 +79,57 @@ function PatientForm() {
   );
 }
 
-function DoctorForm() {
+function DoctorForm({ navigate }) {
+  const [formData, setFormData] = useState({
+    name: '', email: '', password: '', specialization: '', experience: '', availability: 'Available'
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        ...formData,
+        role: 'doctor'
+      });
+
+      const { token, user } = res.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      navigate("/dashboard");
+
+    } catch (err) {
+      alert("Registration failed: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
-    <form>
+    <form onSubmit={handleRegister}>
       <div className="form-group">
         <label>Name:</label>
-        <input type="text" className="form-control" placeholder="Enter name" />
+        <input name="name" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Email:</label>
-        <input type="email" className="form-control" placeholder="Enter email" />
+        <input type="email" name="email" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Password:</label>
-        <input type="password" className="form-control" placeholder="Password" />
+        <input type="password" name="password" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Specialization:</label>
-        <input type="text" className="form-control" placeholder="e.g., Cardiologist" />
+        <input name="specialization" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Experience (Years):</label>
-        <input type="number" className="form-control" placeholder="Enter years of experience" />
+        <input type="number" name="experience" className="form-control" onChange={handleChange} required />
       </div>
       <div className="form-group">
         <label>Availability:</label>
-        <select className="form-control">
-          <option>Available</option>
-          <option>Not Available</option>
+        <select name="availability" className="form-control" onChange={handleChange}>
+          <option>Available</option><option>Not Available</option>
         </select>
       </div>
       <button type="submit" className="btn btn-primary mt-3">Register as Doctor</button>

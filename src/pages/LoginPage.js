@@ -1,17 +1,41 @@
 import React, { useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('patient'); // default patient login
+  const [loading, setLoading] = useState(false); // Loading state for the login request
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('Login Info:', { email, password, userType });
+    setLoading(true); // Set loading to true when login is triggered
 
-    // Here you would usually send data to your backend API
-    // axios.post('/api/login', { email, password, userType }) ...
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+        role: userType // backend expects role
+      });
+
+      const { token, user } = response.data;
+
+      // ✅ Save token and user info
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Navigate to dashboard
+      navigate("/dashboard");
+
+    } catch (err) {
+      console.error("Login failed:", err.response?.data?.message || err.message);
+      alert(err.response?.data?.message || "Login failed. Check your credentials.");
+    } finally {
+      setLoading(false); // Set loading back to false after the request finishes
+    }
   };
 
   return (
@@ -56,8 +80,8 @@ function LoginPage() {
           />
         </div>
 
-        <button type="submit" className="btn btn-success mt-3">
-          Login as {userType === 'patient' ? 'Patient' : 'Doctor'}
+        <button type="submit" className="btn btn-success mt-3" disabled={loading}>
+          {loading ? 'Logging in...' : `Login as ${userType === 'patient' ? 'Patient' : 'Doctor'}`}
         </button>
       </form>
     </div>
